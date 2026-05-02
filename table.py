@@ -7,7 +7,7 @@ class Item(Base):
 
     # Defining the columns based on your assignment requirements
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
-    item_name = Column(String(50), nullable=False)
-    category = Column(String(50), nullable=False)   
+    name = Column(String(50), nullable=False)
+    description = Column(String(200), nullable=False)   
     price = Column(Integer, nullable=False)
     stock = Column(Integer, nullable=False)

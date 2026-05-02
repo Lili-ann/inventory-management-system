@@ -1,14 +1,86 @@
 from fastapi import FastAPI
-import item
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+
+import table
 from database import engine
+import bouncer
+from database import SessionLocal
+
 
 # tells SQLAlchemy to log into Postgres and create your tables!
-item.Base.metadata.create_all(bind=engine)
+table.Base.metadata.create_all(bind=engine)
 
 # Initialize the FastAPI application
 app = FastAPI(title="Inventory Management System")
 
-# A simple GET endpoint to test that the server is running
-@app.get("/")
-def root():
-    return {"message": "Welcome to Lilian's Inventory Management System! She has successfully connected the database"}
+# Dependency: This opens a connection to the database, hands it to your API, 
+# and then closes it automatically when the request is finished.
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# 1. CREATE: Add a new item (POST /item)
+@app.post("/item", response_model=bouncer.ItemResponse)
+def create_item(product: bouncer.ItemCreate, db: Session = Depends(get_db)):
+    # Create a new database item based on our models.py blueprint
+    db_item = table.Item(
+        name=product.name,
+        description=product.description,
+        price=product.price,
+        stock=product.stock
+    )
+    # Add it to the database and save (commit) the changes
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item) # Refresh to grab the newly generated UUID
+    
+    return db_item
+
+#2. READ: Get an item by ID (GET /item/{id})
+@app.get("/item/{item_id}", response_model=bouncer.ItemResponse)
+def read_item(item_id: str, db: Session = Depends(get_db)):
+    db_item = db.query(table.Item).filter(table.Item.id == item_id).first()
+    if db_item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return db_item
+
+# 3. UPDATE: Update an item by ID (PUT /item/{id})
+@app.put("/item/{item_id}", response_model=bouncer.ItemResponse)
+def update_item(item_id: str, product: bouncer.ItemCreate, db: Session = Depends(get_db)):
+    db_item = db.query(table.Item).filter(table.Item.id == item_id).first()
+    if db_item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    # Update the item's properties
+    db_item.name = product.name
+    db_item.description = product.description
+    db_item.price = product.price
+    db_item.stock = product.stock
+    
+    db.commit()
+    db.refresh(db_item)
+    
+    return db_item
+
+# 4. DELETE: Delete an item by ID (DELETE /item/{id})
+@app.delete("/item/{item_id}")
+def delete_item(item_id: str, db: Session = Depends(get_db)):
+    db_item = db.query(table.Item).filter(table.Item.id == item_id).first()
+    if db_item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    db.delete(db_item)
+    db.commit()
+    
+    return {"message": "Item deleted successfully"} 
+
+
+# 5. LIST VIEW: Get all items (GET /items)
+@app.get("/items", response_model=list[bouncer.ItemResponse])
+def list_items(db: Session = Depends(get_db)):
+    return db.query(table.Item).all()
