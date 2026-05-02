@@ -1,0 +1,31 @@
+
+services:
+  # 1. PostgreSQL Database for Inventory Data
+  postgres_db:
+    image: postgres
+    container_name: mypostgres
+    restart: always
+    environment:
+      POSTGRES_USER: lili
+      POSTGRES_PASSWORD: lilian17
+      POSTGRES_DB: inventory_db
+    ports:
+      - "5422:5432"
+ 
+
+  # 2. MongoDB Database for Inventory Data
+  mongo_db:
+    image: mongo:latest
+    container_name: inventory_mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: lili
+      MONGO_INITDB_ROOT_PASSWORD: lilian17
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+# This is to ensure my data isn't deleted if the container stops
+volumes:
+  pgdata:
+  mongodata:

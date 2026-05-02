@@ -1,0 +1,14 @@
+# Virtual Environment
+venv/
+env/
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Docker database volumes (if mapped locally)
+pgdata/
+mongodata/
+
+# Secrets (if you decide to use a .env file later)
+.env
