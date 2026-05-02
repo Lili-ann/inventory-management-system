@@ -1,9 +1,8 @@
 
 services:
-  # 1. PostgreSQL Database for Inventory Data
   postgres_db:
     image: postgres
-    container_name: mypostgres
+    container_name: inventory_postgres
     restart: always
     environment:
       POSTGRES_USER: lili
@@ -13,7 +12,6 @@ services:
       - "5422:5432"
  
 
-  # 2. MongoDB Database for Inventory Data
   mongo_db:
     image: mongo:latest
     container_name: inventory_mongo
@@ -25,6 +23,17 @@ services:
       - "27017:27017"
     volumes:
       - mongodata:/data/db
+
+  fastapi-app:
+    build: .                 
+    container_name: inventory_api
+    ports:
+      - "8000:8000"          
+    depends_on:
+      - postgres_db             
+      - mongo_db
+
+
 # This is to ensure my data isn't deleted if the container stops
 volumes:
   pgdata:
