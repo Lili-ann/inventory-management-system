@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Request 
+from fastapi.middleware.cors import CORSMiddleware
 import datetime 
 from mongo import logs_collection 
 
@@ -15,6 +16,15 @@ table.Base.metadata.create_all(bind=engine)
 
 # Initialize the FastAPI application
 app = FastAPI(title="Inventory Management System")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.middleware("http")
 async def log_api_requests(request: Request, call_next):

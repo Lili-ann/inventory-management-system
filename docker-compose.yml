@@ -24,16 +24,6 @@ services:
     volumes:
       - mongodata:/data/db
 
-  fastapi-app:
-    build: .                 
-    container_name: inventory_api
-    ports:
-      - "8000:8000"          
-    depends_on:
-      - postgres_db             
-      - mongo_db
-
-
 # This is to ensure my data isn't deleted if the container stops
 volumes:
   pgdata:
