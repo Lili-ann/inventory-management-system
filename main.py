@@ -1,8 +1,9 @@
-from fastapi import FastAPI
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request 
+import datetime 
+from mongo import logs_collection 
+
+import sqlalchemy
 from sqlalchemy.orm import Session
-
-
 import table
 from database import engine
 import bouncer
@@ -15,14 +16,55 @@ table.Base.metadata.create_all(bind=engine)
 # Initialize the FastAPI application
 app = FastAPI(title="Inventory Management System")
 
-# Dependency: This opens a connection to the database, hands it to your API, 
-# and then closes it automatically when the request is finished.
+@app.middleware("http")
+async def log_api_requests(request: Request, call_next):
+    # 1. Let the user's request go through and get the response
+    response = await call_next(request)
+
+    # 2. Figure out what "Action" they just did based on the Method
+    method = request.method
+    endpoint = request.url.path
+    action = "UNKNOWN"
+
+    if endpoint.startswith("/item"):
+        if method == "POST":
+            action = "ADD_INVENTORY"
+        elif method == "GET":
+            # If it's just /items, it's a LIST. If it's /item/123, it's a GET.
+            action = "LIST_INVENTORY" if endpoint == "/items" else "GET_INVENTORY"
+        elif method == "PUT":
+            action = "EDIT_INVENTORY"
+        elif method == "DELETE":
+            action = "DELETE_INVENTORY"
+
+    # 3. Build the JSON document exactly how your rubric asked
+    log_document = {
+        "timestamp": datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "method": method,
+        "endpoint": endpoint,
+        "action": action,
+    }
+
+    # 4. Save it to MongoDB (We use try/except so if Mongo crashes, the API still works)
+    try:
+        # Avoid logging the /docs or /openapi.json traffic
+        if not endpoint.startswith("/docs") and not endpoint.startswith("/openapi"):
+            logs_collection.insert_one(log_document)
+            print(f"Logged to Mongo: {log_document}") # Just to help you see it in the terminal
+    except Exception as e:
+        print(f"Failed to log to MongoDB: {e}")
+
+    # 5. Return the final response to the user
+    return response
+
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 
 # 1. CREATE: Add a new item (POST /item)
 @app.post("/item", response_model=bouncer.ItemResponse)
