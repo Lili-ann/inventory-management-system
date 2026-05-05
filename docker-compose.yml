@@ -11,9 +11,8 @@ services:
     ports:
       - "5422:5432"
  
-
   mongo_db:
-    image: mongo:latest
+    image: mongo:7.0
     container_name: inventory_mongo
     restart: always
     environment:

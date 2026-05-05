@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Request 
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import datetime 
 from mongo import logs_collection 
@@ -58,8 +59,8 @@ async def log_api_requests(request: Request, call_next):
     # 4. Save it to MongoDB (We use try/except so if Mongo crashes, the API still works)
     try:
         # Avoid logging the /docs or /openapi.json traffic
-        if not endpoint.startswith("/docs") and not endpoint.startswith("/openapi"):
-            logs_collection.insert_one(log_document)
+         if not endpoint.startswith("/docs") and not endpoint.startswith("/openapi") and method != "OPTIONS":
+            await logs_collection.insert_one(log_document)
             print(f"Logged to Mongo: {log_document}") # Just to help you see it in the terminal
     except Exception as e:
         print(f"Failed to log to MongoDB: {e}")
@@ -75,6 +76,11 @@ def get_db():
     finally:
         db.close()
 
+
+# 0. Serve the UI (GET /)
+@app.get("/", response_class=FileResponse)
+def serve_ui():
+    return "index.html"
 
 # 1. CREATE: Add a new item (POST /item)
 @app.post("/item", response_model=bouncer.ItemResponse)
