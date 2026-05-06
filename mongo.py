@@ -1,8 +1,8 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 
 # The connection string to your Dockerized MongoDB
-# Note: 27017 is the default port. If you changed it in your docker-compose.yml, update it here!
-MONGO_URL = "mongodb://lili:lilian17@localhost:27017/"
+# Notice we changed 'localhost' to the container name 'inventory_mongo'
+MONGO_URL = "mongodb://lili:lilian17@inventory_mongo:27017/"
 
 # 1. Connect to the MongoDB server
 client = AsyncIOMotorClient(MONGO_URL)

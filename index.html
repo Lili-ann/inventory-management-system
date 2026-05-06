@@ -195,7 +195,7 @@
     /* Logs Styles */
     .log-row {
       display: grid;
-      grid-template-columns: 220px 100px 180px 1fr;
+      grid-template-columns: 180px 90px 160px 200px 1fr;
       align-items: center;
       padding: 14px 24px;
       border-bottom: 1px solid var(--row-border);
@@ -248,11 +248,12 @@
 
   <h1 style="margin-top: 60px;">API Activity Logs</h1>
   <div class="card">
-    <div class="table-header" style="grid-template-columns: 220px 100px 180px 1fr;">
+    <div class="table-header" style="grid-template-columns: 180px 90px 160px 200px 1fr;">
       <span>Timestamp</span>
       <span>Method</span>
       <span>Action</span>
       <span>Endpoint</span>
+      <span>User Agent</span>
     </div>
     <div class="table-body" id="logsBody">
       <div class="empty-state">Loading logs...</div>
@@ -531,6 +532,7 @@
                   <div class="cell"><span class="method-badge ${methodClass}">${log.method}</span></div>
                   <div class="cell" style="color: var(--accent); font-weight: 600;">${log.action}</div>
                   <div class="cell">${log.endpoint}</div>
+                  <div class="cell" style="color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${log.user_agent || 'Unknown'}">${log.user_agent || 'Unknown'}</div>
               </div>
               `;
               logsBody.innerHTML += row;

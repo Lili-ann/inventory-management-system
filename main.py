@@ -54,6 +54,7 @@ async def log_api_requests(request: Request, call_next):
         "method": method,
         "endpoint": endpoint,
         "action": action,
+        "user_agent": request.headers.get("user-agent", "Unknown")
     }
 
     # 4. Save it to MongoDB (We use try/except so if Mongo crashes, the API still works)

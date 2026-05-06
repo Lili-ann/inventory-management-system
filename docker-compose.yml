@@ -1,7 +1,18 @@
 
 services:
+  # 1. Your FastAPI Application
+  fastapi_app:
+    build: .
+    container_name: inventory_api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres_db
+      - mongo_db
+    restart: always
+
   postgres_db:
-    image: postgres
+    image: postgres:16
     container_name: inventory_postgres
     restart: always
     environment:
@@ -10,6 +21,8 @@ services:
       POSTGRES_DB: inventory_db
     ports:
       - "5422:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
  
   mongo_db:
     image: mongo:7.0
