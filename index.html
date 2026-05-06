@@ -191,6 +191,32 @@
     .btn-save:hover { background: #6ee7a0; }
     .btn-cancel { background: var(--row-border); color: var(--text); transition: background 0.2s; }
     .btn-cancel:hover { background: #444; }
+
+    /* Logs Styles */
+    .log-row {
+      display: grid;
+      grid-template-columns: 220px 100px 180px 1fr;
+      align-items: center;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--row-border);
+      background: var(--row);
+      font-family: monospace;
+      font-size: 13px;
+    }
+    .log-row:last-child { border-bottom: none; }
+    .method-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 11px;
+      display: inline-block;
+      text-align: center;
+    }
+    .method-GET { background: #2b5c8f; color: #fff; }
+    .method-POST { background: #2b8f5c; color: #fff; }
+    .method-PUT { background: #b5a642; color: #fff; }
+    .method-DELETE { background: #c0392b; color: #fff; }
+    .method-OPTIONS { background: #666; color: #fff; }
   </style>
 </head>
 <body>
@@ -217,6 +243,22 @@
       <div class="empty-state">
         Loading inventory data...
       </div>
+    </div>
+  </div>
+
+  <h1 style="margin-top: 60px;">API Activity Logs</h1>
+  <div class="card">
+    <div class="table-header" style="grid-template-columns: 220px 100px 180px 1fr;">
+      <span>Timestamp</span>
+      <span>Method</span>
+      <span>Action</span>
+      <span>Endpoint</span>
+    </div>
+    <div class="table-body" id="logsBody">
+      <div class="empty-state">Loading logs...</div>
+    </div>
+    <div style="padding: 16px; text-align: center; border-top: 1px solid var(--row-border); background: var(--surface);">
+      <button id="showMoreLogsBtn" class="btn-cancel" style="display: none; font-size: 13px;" onclick="loadMoreLogs()">Show More</button>
     </div>
   </div>
 </div>
@@ -457,8 +499,65 @@
       }
   }
 
+  let currentLogSkip = 0;
+  const LOGS_PER_PAGE = 5;
+
+  // Fetch and display logs
+  async function loadLogs(reset = true) {
+      const logsBody = document.getElementById('logsBody');
+      const showMoreBtn = document.getElementById('showMoreLogsBtn');
+
+      if (reset) {
+          currentLogSkip = 0;
+          logsBody.innerHTML = '<div class="empty-state">Loading logs...</div>';
+          if (showMoreBtn) showMoreBtn.style.display = 'none';
+      }
+
+      try {
+          const response = await fetch(`${API_URL}/logs?skip=${currentLogSkip}&limit=${LOGS_PER_PAGE}`);
+          const logs = await response.json();
+
+          if (reset && logs.length === 0) {
+              logsBody.innerHTML = '<div class="empty-state">No logs found yet.</div>';
+              return;
+          }
+
+          if (reset) logsBody.innerHTML = '';
+          logs.forEach(log => {
+              const methodClass = `method-${log.method}`;
+              const row = `
+              <div class="log-row">
+                  <div class="cell" style="color: var(--muted);">${log.timestamp}</div>
+                  <div class="cell"><span class="method-badge ${methodClass}">${log.method}</span></div>
+                  <div class="cell" style="color: var(--accent); font-weight: 600;">${log.action}</div>
+                  <div class="cell">${log.endpoint}</div>
+              </div>
+              `;
+              logsBody.innerHTML += row;
+          });
+
+          // Show the "Show More" button if we got a full page (meaning there might be more)
+          if (logs.length === LOGS_PER_PAGE) {
+              if (showMoreBtn) showMoreBtn.style.display = 'inline-block';
+          } else {
+              if (showMoreBtn) showMoreBtn.style.display = 'none';
+          }
+      } catch (error) {
+          console.error("Error loading logs:", error);
+          if (reset) logsBody.innerHTML = '<div class="empty-state" style="color: var(--del-hover);">Error loading logs.</div>';
+      }
+  }
+
+  function loadMoreLogs() {
+      currentLogSkip += LOGS_PER_PAGE;
+      loadLogs(false);
+  }
+
   // Run the data fetch as soon as the page loads
-  window.onload = loadItems;
+  window.onload = () => {
+      loadItems();
+      loadLogs();
+  };
 </script>
 
 </body>

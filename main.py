@@ -58,8 +58,8 @@ async def log_api_requests(request: Request, call_next):
 
     # 4. Save it to MongoDB (We use try/except so if Mongo crashes, the API still works)
     try:
-        # Avoid logging the /docs or /openapi.json traffic
-         if not endpoint.startswith("/docs") and not endpoint.startswith("/openapi") and method != "OPTIONS":
+        # Avoid logging background traffic like docs, the UI (/), and log fetching (/logs)
+         if not endpoint.startswith("/docs") and not endpoint.startswith("/openapi") and endpoint not in ["/", "/logs"] and method != "OPTIONS":
             await logs_collection.insert_one(log_document)
             print(f"Logged to Mongo: {log_document}") # Just to help you see it in the terminal
     except Exception as e:
@@ -142,3 +142,10 @@ def delete_item(item_id: str, db: Session = Depends(get_db)):
 @app.get("/items", response_model=list[bouncer.ItemResponse])
 def list_items(db: Session = Depends(get_db)):
     return db.query(table.Item).all()
+
+# 6. READ LOGS: Get API logs from MongoDB (GET /logs)
+@app.get("/logs")
+async def get_api_logs(skip: int = 0, limit: int = 5):
+    # Fetch the most recent logs, with pagination parameters (skip and limit)
+    logs = await logs_collection.find({}, {"_id": 0}).sort("timestamp", -1).skip(skip).to_list(length=limit)
+    return logs
