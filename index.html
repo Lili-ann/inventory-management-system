@@ -35,7 +35,7 @@
 
     .wrapper {
       width: 100%;
-      max-width: 1200px;
+      max-width: 900px;
     }
 
     h1 {
@@ -58,7 +58,7 @@
 
     .table-header {
       display: grid;
-      grid-template-columns: 120px 1fr 1.6fr 130px 90px 120px;
+      grid-template-columns: 120px 1fr 130px 90px 120px;
       align-items: center;
       padding: 14px 24px;
       border-bottom: 1px solid #333;
@@ -98,12 +98,13 @@
 
     .table-row {
       display: grid;
-      grid-template-columns: 120px 1fr 1.6fr 130px 90px 120px;
+      grid-template-columns: 120px 1fr 130px 90px 120px;
       align-items: center;
       padding: 18px 24px;
       border-bottom: 1px solid var(--row-border);
       background: var(--row);
       transition: background 0.15s;
+      cursor: pointer;
     }
     .table-row:last-child { border-bottom: none; }
     .table-row:hover      { background: #303030; }
@@ -194,13 +195,12 @@
 </head>
 <body>
 <div class="wrapper">
-  <h1>Dessert Inventory Management System</h1>
+  <h1>Inventory Management System</h1>
 
   <div class="card">
     <div class="table-header">
       <span>ID</span>
       <span>Item</span>
-      <span>Description</span>
       <span>Price (IDR)</span>
       <span>Stock</span>
       <span class="col-actions">
@@ -217,6 +217,26 @@
       <div class="empty-state">
         Loading inventory data...
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Item Modal -->
+<div id="viewModal" class="modal">
+  <div class="modal-content">
+    <h2>Item Details</h2>
+    <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; margin-top: 10px; color: var(--text);">
+      <div><div style="font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 600;">ID</div><div id="viewId" style="font-family: monospace; margin-top: 4px;"></div></div>
+      <div><div style="font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 600;">Name</div><div id="viewName" style="font-weight: 600; font-size: 16px; margin-top: 4px;"></div></div>
+      <div><div style="font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 600;">Description</div><div id="viewDesc" style="margin-top: 4px; line-height: 1.4;"></div></div>
+      <div style="display: flex; gap: 40px;">
+        <div><div style="font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 600;">Price</div><div style="margin-top: 4px; font-weight: 600;">IDR <span id="viewPrice"></span></div></div>
+        <div><div style="font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 600;">Stock</div><div id="viewStock" style="margin-top: 4px; font-weight: 600;"></div></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" onclick="closeViewModal()">Close</button>
+      <button type="button" class="btn-save" id="btnViewEdit" style="background: var(--edit-bg); color: #fff;">Edit Item</button>
     </div>
   </div>
 </div>
@@ -302,19 +322,12 @@
           const shortName = item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name;
 
               const row = `
-                  <div class="table-row">
-                    <div class="cell" style="font-weight: 700;">${shortId}</div>
+              <div class="table-row" onclick="openViewModal('${item.id}', event)">
+                <div class="cell" style="font-weight: 700;">${shortId}</div>
                 <div class="cell" style="font-weight: 600;" title="${item.name}">${shortName}</div>
-                    <div class="cell" style="font-size: 13px;">${item.description}</div>
                     <div class="cell" style="font-weight: 700;">${formattedPrice}</div>
                     <div class="cell" style="font-weight: 700;">${item.stock}</div>
                     <div class="cell cell-actions">
-                      <button class="btn-icon btn-edit" onclick="openEditModal('${item.id}')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                      </button>
                       <button class="btn-icon btn-delete" onclick="openDeleteModal('${item.id}')">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <polyline points="3 6 5 6 21 6"></polyline>
@@ -335,6 +348,32 @@
               Could not connect to the database. Is FastAPI running?
             </div>`;
       }
+  }
+
+  // View Modal Functions
+  function openViewModal(id, event) {
+      // Prevent opening the view modal if the user clicked the edit or delete buttons
+      if (event && event.target.closest('.cell-actions')) return;
+      
+      const item = currentItems.find(i => i.id === id);
+      if (!item) return;
+      
+      document.getElementById('viewId').innerText = item.id;
+      document.getElementById('viewName').innerText = item.name;
+      document.getElementById('viewDesc').innerText = item.description;
+      document.getElementById('viewPrice').innerText = Number(item.price).toFixed(2);
+      document.getElementById('viewStock').innerText = item.stock;
+      
+      document.getElementById('btnViewEdit').onclick = () => {
+          closeViewModal();
+          openEditModal(item.id);
+      };
+      
+      document.getElementById('viewModal').style.display = 'flex';
+  }
+
+  function closeViewModal() {
+      document.getElementById('viewModal').style.display = 'none';
   }
 
   // Modal Functions
