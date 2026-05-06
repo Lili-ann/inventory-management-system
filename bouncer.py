@@ -7,7 +7,7 @@ class ItemBase(BaseModel):
     price: int
     stock: int
 
-# Schema for creating an item (user doesn't send the ID, we generate it)
+# Schema for creating an item 
 class ItemCreate(ItemBase):
     pass
 
@@ -16,4 +16,4 @@ class ItemResponse(ItemBase):
     id: str
 
     class Config:
-        from_attributes = True # This tells Pydantic to cleanly read your SQLAlchemy database model
+        from_attributes = True 

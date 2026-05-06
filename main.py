@@ -12,7 +12,7 @@ import bouncer
 from database import SessionLocal
 
 
-# tells SQLAlchemy to log into Postgres and create your tables!
+#SQLAlchemy log into Postgres and create tables!
 table.Base.metadata.create_all(bind=engine)
 
 # Initialize the FastAPI application
@@ -29,10 +29,10 @@ app.add_middleware(
 
 @app.middleware("http")
 async def log_api_requests(request: Request, call_next):
-    # 1. Let the user's request go through and get the response
+    #Let the user's request go through and get the response
     response = await call_next(request)
 
-    # 2. Figure out what "Action" they just did based on the Method
+    #identify user action based on the endpoint and method
     method = request.method
     endpoint = request.url.path
     action = "UNKNOWN"
@@ -41,14 +41,13 @@ async def log_api_requests(request: Request, call_next):
         if method == "POST":
             action = "ADD_INVENTORY"
         elif method == "GET":
-            # If it's just /items, it's a LIST. If it's /item/123, it's a GET.
             action = "LIST_INVENTORY" if endpoint == "/items" else "GET_INVENTORY"
         elif method == "PUT":
             action = "EDIT_INVENTORY"
         elif method == "DELETE":
             action = "DELETE_INVENTORY"
 
-    # 3. Build the JSON document exactly how your rubric asked
+    #Build the JSON document to log to MongoDB
     log_document = {
         "timestamp": datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "method": method,
@@ -57,16 +56,14 @@ async def log_api_requests(request: Request, call_next):
         "user_agent": request.headers.get("user-agent", "Unknown")
     }
 
-    # 4. Save it to MongoDB (We use try/except so if Mongo crashes, the API still works)
+    # Save it to MongoDB 
     try:
-        # Avoid logging background traffic like docs, the UI (/), and log fetching (/logs)
          if not endpoint.startswith("/docs") and not endpoint.startswith("/openapi") and endpoint not in ["/", "/logs"] and method != "OPTIONS":
             await logs_collection.insert_one(log_document)
-            print(f"Logged to Mongo: {log_document}") # Just to help you see it in the terminal
+            print(f"Logged to Mongo: {log_document}") 
     except Exception as e:
         print(f"Failed to log to MongoDB: {e}")
 
-    # 5. Return the final response to the user
     return response
 
 
@@ -78,29 +75,28 @@ def get_db():
         db.close()
 
 
-# 0. Serve the UI (GET /)
 @app.get("/", response_class=FileResponse)
 def serve_ui():
     return "index.html"
 
-# 1. CREATE: Add a new item (POST /item)
+#Add a new item (POST /item)
 @app.post("/item", response_model=bouncer.ItemResponse)
 def create_item(product: bouncer.ItemCreate, db: Session = Depends(get_db)):
-    # Create a new database item based on our models.py blueprint
+    
     db_item = table.Item(
         name=product.name,
         description=product.description,
         price=product.price,
         stock=product.stock
     )
-    # Add it to the database and save (commit) the changes
+    # Add it to the database and save the changes
     db.add(db_item)
     db.commit()
-    db.refresh(db_item) # Refresh to grab the newly generated UUID
+    db.refresh(db_item) 
     
     return db_item
 
-#2. READ: Get an item by ID (GET /item/{id})
+#Get an item by ID (GET /item/{id})
 @app.get("/item/{item_id}", response_model=bouncer.ItemResponse)
 def read_item(item_id: str, db: Session = Depends(get_db)):
     db_item = db.query(table.Item).filter(table.Item.id == item_id).first()
@@ -108,7 +104,7 @@ def read_item(item_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Item not found")
     return db_item
 
-# 3. UPDATE: Update an item by ID (PUT /item/{id})
+#Update an item by ID (PUT /item/{id})
 @app.put("/item/{item_id}", response_model=bouncer.ItemResponse)
 def update_item(item_id: str, product: bouncer.ItemCreate, db: Session = Depends(get_db)):
     db_item = db.query(table.Item).filter(table.Item.id == item_id).first()
@@ -126,7 +122,7 @@ def update_item(item_id: str, product: bouncer.ItemCreate, db: Session = Depends
     
     return db_item
 
-# 4. DELETE: Delete an item by ID (DELETE /item/{id})
+#Delete an item by ID (DELETE /item/{id})
 @app.delete("/item/{item_id}")
 def delete_item(item_id: str, db: Session = Depends(get_db)):
     db_item = db.query(table.Item).filter(table.Item.id == item_id).first()
@@ -139,14 +135,14 @@ def delete_item(item_id: str, db: Session = Depends(get_db)):
     return {"message": "Item deleted successfully"} 
 
 
-# 5. LIST VIEW: Get all items (GET /items)
+#LIST VIEW: Get all items (GET /items)
 @app.get("/items", response_model=list[bouncer.ItemResponse])
 def list_items(db: Session = Depends(get_db)):
     return db.query(table.Item).all()
 
-# 6. READ LOGS: Get API logs from MongoDB (GET /logs)
+#Get API logs from MongoDB (GET /logs)
 @app.get("/logs")
 async def get_api_logs(skip: int = 0, limit: int = 5):
-    # Fetch the most recent logs, with pagination parameters (skip and limit)
+    # Fetch the most recent logs
     logs = await logs_collection.find({}, {"_id": 0}).sort("timestamp", -1).skip(skip).to_list(length=limit)
     return logs

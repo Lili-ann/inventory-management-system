@@ -36,7 +36,6 @@ services:
     volumes:
       - mongodata:/data/db
 
-# This is to ensure my data isn't deleted if the container stops
 volumes:
   pgdata:
   mongodata:

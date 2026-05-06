@@ -3,9 +3,9 @@ from database import Base
 import uuid
 
 class Item(Base):
-    __tablename__ = "items" # This will be the name of the table in Postgres
+    __tablename__ = "items" # tablename
 
-    # Defining the columns based on your assignment requirements
+    # Defining the columns for items table 
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(50), nullable=False)
     description = Column(String(200), nullable=False)   

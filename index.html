@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Tech Inventory Management System</title>
+  <title>Inventory Management System</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -350,15 +350,14 @@
               return;
           }
 
-          // Clear the loading message
           tableBody.innerHTML = ''; 
 
-          // Loop through the data and build the rows based on your CSS grid
+          // Loop through the data and build the rows based
           items.forEach(item => {
-              // Grab the first 4 characters of the UUID so it looks like the mock-up
+              // Grab the first 4 characters of the UUID
               const shortId = item.id.substring(0, 6).toUpperCase();
               
-              // Format the price with 2 decimal places to match your mockup
+              // Format the price with 2 decimal places
               const formattedPrice = Number(item.price).toFixed(2);
 
           // Reduce the item name length if it's too long
@@ -538,7 +537,6 @@
               logsBody.innerHTML += row;
           });
 
-          // Show the "Show More" button if we got a full page (meaning there might be more)
           if (logs.length === LOGS_PER_PAGE) {
               if (showMoreBtn) showMoreBtn.style.display = 'inline-block';
           } else {
